@@ -1,4 +1,4 @@
-# @ex-machina/opencode-anthropic-auth
+# @opzero1/opencode-anthropic-auth
 
 ## 1.8.1
 
