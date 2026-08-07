@@ -6,7 +6,7 @@
 > Use your best judgment and don't try to abuse the subscriptions. Plugins like oh-my-openagent are _known_ to trigger bans. Please be careful when using Ralph loops or insanely heavy usage patterns.
 
 > [!IMPORTANT]
-> If you are seeing issues, please try to `rm -rf ~/.cache/opencode/packages/@opzero1` and check your `opencode.json` config to make sure you're on the latest version.
+> If you are seeing issues, please try to `rm -rf ~/.cache/opencode/packages/@op1` and check your `opencode.json` config to make sure you're on the latest version.
 >
 > Try this FIRST before making an Issue. Thanks!
 
@@ -18,7 +18,7 @@ Add the plugin to your OpenCode configuration:
 
 ```json
 {
-  "plugins": ["@opzero1/opencode-anthropic-auth"]
+  "plugins": ["@op1/opencode-anthropic-auth"]
 }
 ```
 
@@ -31,7 +31,7 @@ Add the plugin to your OpenCode configuration:
 
 ```json
 {
-  "plugins": ["@opzero1/opencode-anthropic-auth@2.0.0-beta.1"]
+  "plugins": ["@op1/opencode-anthropic-auth@2.0.0-beta.1"]
 }
 ```
 

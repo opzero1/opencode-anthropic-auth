@@ -1,9 +1,9 @@
 {
-  "name": "@opzero1/opencode-anthropic-auth",
+  "name": "@op1/opencode-anthropic-auth",
   "version": "2.0.0-beta.1",
   "repository": {
     "type": "git",
-    "url": "https://github.com/opzero1/opencode-anthropic-auth"
+    "url": "git+https://github.com/opzero1/opencode-anthropic-auth.git"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

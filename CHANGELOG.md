@@ -1,4 +1,4 @@
-# @opzero1/opencode-anthropic-auth
+# @op1/opencode-anthropic-auth
 
 ## 1.8.1
 
