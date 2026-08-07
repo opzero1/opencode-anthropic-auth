@@ -18,7 +18,7 @@ Add the plugin to your OpenCode configuration:
 
 ```json
 {
-  "plugin": ["@ex-machina/opencode-anthropic-auth"]
+  "plugins": ["@ex-machina/opencode-anthropic-auth"]
 }
 ```
 
@@ -31,17 +31,18 @@ Add the plugin to your OpenCode configuration:
 
 ```json
 {
-  "plugin": ["@ex-machina/opencode-anthropic-auth@1.8.0"]
+  "plugins": ["@ex-machina/opencode-anthropic-auth@2.0.0-beta.1"]
 }
 ```
 
-## Authentication Methods
+## Authentication
 
-The plugin provides three authentication options:
+The plugin adds one authentication option:
 
 - **Claude Pro/Max** - OAuth flow via `claude.ai` for Pro/Max subscribers. Uses your existing subscription at no additional API cost.
-- **Create an API Key** - OAuth flow via `console.anthropic.com` that creates an API key on your behalf.
-- **Manually enter API Key** - Standard API key entry for users who already have one.
+
+OpenCode V2 already provides manual API-key entry and `ANTHROPIC_API_KEY`
+environment-variable authentication, so the plugin does not duplicate them.
 
 ## Configuration
 
@@ -50,7 +51,6 @@ The plugin supports the following environment variables:
 | Variable                          | Description                                                                                                                                                                                 |
 |-----------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `ANTHROPIC_BASE_URL`              | Override the API endpoint URL (e.g. for proxying). Must be a valid HTTP(S) URL.                                                                                                             |
-| `ANTHROPIC_INSECURE`              | Set to `1` or `true` to skip TLS certificate verification. Only effective when `ANTHROPIC_BASE_URL` is also set.                                                                            |
 
 ## How It Works
 
@@ -61,7 +61,6 @@ For Claude Pro/Max authentication, the plugin:
 3. Automatically refreshes expired tokens
 4. Injects the required OAuth headers and beta flags into API requests
 5. Sanitizes the system prompt for compatibility (see below)
-6. Zeros out model costs (since usage is covered by the subscription)
 
 ### System Prompt Sanitization
 
