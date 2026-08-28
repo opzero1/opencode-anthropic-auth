@@ -5,8 +5,11 @@ export const AUTHORIZE_URLS = {
   max: 'https://claude.ai/oauth/authorize',
 } as const
 
-export const CODE_CALLBACK_URL =
-  'https://platform.claude.com/oauth/code/callback'
+export const CALLBACK_HOST =
+  process.env.OPENCODE_ANTHROPIC_OAUTH_CALLBACK_HOST?.trim() || '127.0.0.1'
+export const CALLBACK_PORT = 53692
+export const CALLBACK_PATH = '/callback'
+export const CODE_CALLBACK_URL = `http://localhost:${CALLBACK_PORT}${CALLBACK_PATH}`
 
 export const TOKEN_URL = 'https://platform.claude.com/v1/oauth/token'
 

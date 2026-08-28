@@ -7,7 +7,7 @@ afterEach(() => {
 })
 
 describe('authorize', () => {
-  test('returns the hosted callback URL for max mode', async () => {
+  test('returns the loopback callback URL for max mode', async () => {
     const result = await authorize('max')
 
     expect(result.url).toBeString()
@@ -20,7 +20,7 @@ describe('authorize', () => {
     expect(url.searchParams.get('redirect_uri')).toBe(CODE_CALLBACK_URL)
   })
 
-  test('returns the hosted callback URL for console mode', async () => {
+  test('returns the loopback callback URL for console mode', async () => {
     const result = await authorize('console')
 
     const url = new URL(result.url)
@@ -42,10 +42,12 @@ describe('authorize', () => {
     expect(url.searchParams.get('state')).toBe(result.state)
   })
 
-  test('does not use localhost', async () => {
+  test('uses the same loopback redirect for authorization and exchange', async () => {
     const result = await authorize('max')
-    expect(result.redirectUri).not.toContain('localhost')
-    expect(result.url).not.toContain('localhost')
+    expect(result.redirectUri).toContain('localhost')
+    expect(new URL(result.url).searchParams.get('redirect_uri')).toBe(
+      result.redirectUri,
+    )
   })
 })
 

@@ -10,7 +10,7 @@
 >
 > Try this FIRST before making an Issue. Thanks!
 
-An [OpenCode](https://github.com/anomalyco/opencode) plugin that provides Anthropic OAuth authentication, enabling Claude Pro/Max users to use their subscription directly with OpenCode.
+An [OpenCode](https://github.com/anomalyco/opencode) plugin that provides Anthropic OAuth authentication for Claude Pro, Max, Team, and Enterprise accounts.
 
 ## Usage
 
@@ -39,10 +39,16 @@ Add the plugin to your OpenCode configuration:
 
 The plugin adds one authentication option:
 
-- **Claude Pro/Max** - OAuth flow via `claude.ai` for Pro/Max subscribers. Uses your existing subscription at no additional API cost.
+- **Claude account** - OAuth flow via `claude.ai` for Pro, Max, Team, and Enterprise users. Availability and billing follow your organization's Anthropic plan and policies.
 
 OpenCode V2 already provides manual API-key entry and `ANTHROPIC_API_KEY`
 environment-variable authentication, so the plugin does not duplicate them.
+
+Start the browser OAuth flow with:
+
+```bash
+opencode2 auth login anthropic --method oauth
+```
 
 ## Configuration
 
@@ -51,12 +57,13 @@ The plugin supports the following environment variables:
 | Variable                          | Description                                                                                                                                                                                 |
 |-----------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `ANTHROPIC_BASE_URL`              | Override the API endpoint URL (e.g. for proxying). Must be a valid HTTP(S) URL.                                                                                                             |
+| `OPENCODE_ANTHROPIC_OAUTH_CALLBACK_HOST` | Address for the local OAuth callback server to bind. Defaults to `127.0.0.1`; the browser redirect remains `http://localhost:53692/callback`. |
 
 ## How It Works
 
-For Claude Pro/Max authentication, the plugin:
+For Claude account authentication, the plugin:
 
-1. Initiates a PKCE OAuth flow against Anthropic's authorization endpoint
+1. Initiates a PKCE OAuth flow against Anthropic's authorization endpoint and listens for the browser redirect on `http://localhost:53692/callback`
 2. Exchanges the authorization code for access and refresh tokens
 3. Automatically refreshes expired tokens
 4. Injects the required OAuth headers and beta flags into API requests

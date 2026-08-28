@@ -1,6 +1,6 @@
 import { Credential, Integration, Plugin } from '@opencode-ai/plugin/effect'
 import { Effect } from 'effect'
-import { authorize, exchange } from './auth.ts'
+import { authorize, exchange, startCallbackServer } from './auth.ts'
 import { CLIENT_ID, TOKEN_URL, USER_AGENT } from './constants.ts'
 import {
   createStrippedStream,
@@ -29,34 +29,41 @@ export const AnthropicAuthPlugin = Plugin.define({
           method: {
             id: methodID,
             type: 'oauth',
-            label: 'Claude Pro/Max',
+            label: 'Claude account (Pro/Max/Team/Enterprise)',
           },
           authorize: () =>
             Effect.gen(function* () {
               const result = yield* Effect.promise(() => authorize('max'))
+              const server = yield* Effect.promise(() =>
+                startCallbackServer(result.state),
+              )
+              yield* Effect.addFinalizer(() =>
+                Effect.promise(() => server.close()),
+              )
               return {
-                mode: 'code' as const,
+                mode: 'auto' as const,
                 url: result.url,
-                instructions: 'Paste the authorization code here:',
-                callback: (code: string) =>
-                  Effect.gen(function* () {
-                    const credentials = yield* Effect.promise(() =>
-                      exchange(
-                        code,
-                        result.verifier,
-                        result.redirectUri,
-                        result.state,
-                      ),
+                instructions:
+                  'Complete sign-in in your browser. OpenCode will connect automatically.',
+                callback: Effect.gen(function* () {
+                  const callback = yield* Effect.promise(() =>
+                    server.waitForCode(),
+                  )
+                  const credentials = yield* Effect.promise(() =>
+                    exchange(
+                      `${callback.code}#${callback.state}`,
+                      result.verifier,
+                      result.redirectUri,
+                      result.state,
+                    ),
+                  )
+                  if (credentials.type === 'failed') {
+                    return yield* Effect.fail(
+                      new Error('Anthropic authorization code exchange failed'),
                     )
-                    if (credentials.type === 'failed') {
-                      return yield* Effect.fail(
-                        new Error(
-                          'Anthropic authorization code exchange failed',
-                        ),
-                      )
-                    }
-                    return oauthCredential(credentials)
-                  }),
+                  }
+                  return oauthCredential(credentials)
+                }),
               }
             }),
           refresh: (credential) =>

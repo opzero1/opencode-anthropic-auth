@@ -1,16 +1,20 @@
 import { afterEach, describe, expect, mock, test } from 'bun:test'
 import type { Credential } from '@opencode-ai/plugin'
-import { Effect } from 'effect'
+import { Effect, type Scope } from 'effect'
 import { AnthropicAuthPlugin } from '../index.ts'
 
 type OAuthRegistration = {
   integrationID: string
   method: { id: string; type: string; label: string }
-  authorize: () => Effect.Effect<{
-    mode: string
-    url: string
-    callback: (code: string) => Effect.Effect<Credential.OAuth, unknown>
-  }>
+  authorize: () => Effect.Effect<
+    {
+      mode: string
+      url: string
+      callback: Effect.Effect<Credential.OAuth, unknown>
+    },
+    unknown,
+    Scope.Scope
+  >
   refresh: (
     credential: Credential.OAuth,
   ) => Effect.Effect<Credential.OAuth, unknown>
@@ -108,21 +112,37 @@ describe('AnthropicAuthPlugin', () => {
     expect(oauth?.method).toEqual({
       id: 'oauth',
       type: 'oauth',
-      label: 'Claude Pro/Max',
+      label: 'Claude account (Pro/Max/Team/Enterprise)',
     })
 
-    globalThis.fetch = mock(async () =>
-      Response.json({
+    globalThis.fetch = mock(async (input, init) => {
+      if (input.toString().startsWith('http://localhost:53692/callback')) {
+        return originalFetch(input, init)
+      }
+      return Response.json({
         access_token: 'new-access',
         refresh_token: 'new-refresh',
         expires_in: 3600,
-      }),
-    ) as unknown as typeof fetch
+      })
+    }) as unknown as typeof fetch
 
-    const authorization = await Effect.runPromise(oauth!.authorize())
-    const state = new URL(authorization?.url ?? '').searchParams.get('state')
     const credential = await Effect.runPromise(
-      authorization.callback(`code#${state}`),
+      Effect.scoped(
+        Effect.gen(function* () {
+          const authorization = yield* oauth!.authorize()
+          expect(authorization.mode).toBe('auto')
+          expect(
+            new URL(authorization.url).searchParams.get('redirect_uri'),
+          ).toBe('http://localhost:53692/callback')
+          const state = new URL(authorization.url).searchParams.get('state')
+          yield* Effect.promise(() =>
+            globalThis.fetch(
+              `http://localhost:53692/callback?code=code&state=${state}`,
+            ),
+          )
+          return yield* authorization.callback
+        }),
+      ),
     )
     expect(credential).toMatchObject({
       type: 'oauth',
