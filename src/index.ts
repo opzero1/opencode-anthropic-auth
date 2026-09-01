@@ -1,14 +1,13 @@
 import { Credential, Integration, Plugin } from '@opencode-ai/plugin/effect'
 import { Effect } from 'effect'
 import { authorize, exchange, startCallbackServer } from './auth.ts'
-import { CLIENT_ID, TOKEN_URL, USER_AGENT } from './constants.ts'
 import {
-  createStrippedStream,
-  mergeHeaders,
-  rewriteRequestBody,
-  rewriteUrl,
-  setOAuthHeaders,
-} from './transform.ts'
+  CLAUDE_CODE_IDENTITY,
+  CLIENT_ID,
+  REQUIRED_BETAS,
+  TOKEN_URL,
+  USER_AGENT,
+} from './constants.ts'
 
 const integrationID = 'anthropic'
 const methodID = Integration.MethodID.make('oauth')
@@ -73,56 +72,74 @@ export const AnthropicAuthPlugin = Plugin.define({
         })
       })
 
-      yield* ctx.session.hook('http.request', (event) =>
+      yield* ctx.session.hook('context', (event) =>
         Effect.gen(function* () {
           if (event.model.providerID !== integrationID) return
-
           const connection =
             yield* ctx.integration.connection.active(integrationID)
           if (!connection) return
-
           const credential = yield* ctx.integration.connection
             .resolve(connection)
             .pipe(Effect.orDie)
-          if (credential?.type !== 'oauth') return
+          if (credential?.type !== 'oauth' || credential.methodID !== methodID)
+            return
 
-          const headers = mergeHeaders(event.request)
-          setOAuthHeaders(headers, credential.access)
-          const body = event.request.body
-            ? rewriteRequestBody(
-                yield* Effect.promise(() => event.request.clone().text()),
-              )
-            : undefined
-          const rewritten = rewriteUrl(event.request).input
-          event.request = new Request(
-            rewritten instanceof Request ? rewritten.url : rewritten.toString(),
-            {
-              method: event.request.method,
-              headers,
-              body,
-            },
+          if (
+            event.system.some(
+              (part) =>
+                part.type === 'text' && part.text === CLAUDE_CODE_IDENTITY,
+            )
           )
+            return
+          event.system.unshift({ type: 'text', text: CLAUDE_CODE_IDENTITY })
         }),
       )
 
-      yield* ctx.session.hook('http.response', (event) =>
+      yield* ctx.session.hook('model.request', (event) =>
         Effect.gen(function* () {
           if (event.model.providerID !== integrationID) return
-
           const connection =
             yield* ctx.integration.connection.active(integrationID)
           if (!connection) return
-
           const credential = yield* ctx.integration.connection
             .resolve(connection)
             .pipe(Effect.orDie)
-          if (credential?.type !== 'oauth') return
+          if (credential?.type !== 'oauth' || credential.methodID !== methodID)
+            return
 
-          event.response = createStrippedStream(event.response)
+          setOAuthHeaders(event.headers, credential.access)
         }),
       )
     }),
 })
+
+function setOAuthHeaders(headers: Record<string, string>, accessToken: string) {
+  const existingBetas: string[] = []
+  for (const key of Object.keys(headers)) {
+    const name = key.toLowerCase()
+    if (name === 'anthropic-beta') existingBetas.push(headers[key] ?? '')
+    if (
+      name === 'authorization' ||
+      name === 'anthropic-beta' ||
+      name === 'user-agent' ||
+      name === 'x-api-key'
+    ) {
+      delete headers[key]
+    }
+  }
+  const betas = new Set([
+    ...REQUIRED_BETAS,
+    ...existingBetas
+      .join(',')
+      .split(',')
+      .map((beta) => beta.trim())
+      .filter(Boolean),
+  ])
+
+  headers.authorization = `Bearer ${accessToken}`
+  headers['anthropic-beta'] = [...betas].join(',')
+  headers['user-agent'] = USER_AGENT
+}
 
 async function refreshTokens(refreshToken: string) {
   const response = await fetch(TOKEN_URL, {

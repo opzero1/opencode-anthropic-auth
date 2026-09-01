@@ -1,120 +1,67 @@
-# OpenCode Anthropic Auth Plugin
+# OpenCode Anthropic OAuth
+
+Unofficial Anthropic subscription OAuth for OpenCode V2.
 
 > [!WARNING]
-> This plugin comes with no guarantees. You might be banned for breaking the TOS, you might not be. I don't work at Anthropic, nor am I an attorney.
->
-> Use your best judgment and don't try to abuse the subscriptions. Plugins like oh-my-openagent are _known_ to trigger bans. Please be careful when using Ralph loops or insanely heavy usage patterns.
+> Anthropic may restrict or suspend subscription accounts that use unofficial clients. Use this plugin at your own risk.
 
-> [!IMPORTANT]
-> If you are seeing issues, please try to `rm -rf ~/.cache/opencode/packages/@op1` and check your `opencode.json` config to make sure you're on the latest version.
->
-> Try this FIRST before making an Issue. Thanks!
+## Compatibility
 
-An [OpenCode](https://github.com/anomalyco/opencode) plugin that provides Anthropic OAuth authentication for Claude Pro, Max, Team, and Enterprise accounts.
+This release is pinned to one OpenCode V2 beta:
 
-## Usage
+| Component | Version |
+| --- | --- |
+| OpenCode V2 | `0.0.0-beta-18743` |
+| This plugin | `0.0.0-beta-18743` |
+| `@opencode-ai/plugin` | `0.0.0-beta-18743` |
+| Effect | `4.0.0-rc.112` |
 
-Add the plugin to your OpenCode configuration:
+Do not update these independently. A new OpenCode beta needs a new tested plugin release.
 
-```json
+## Install
+
+Pin the full plugin version in `opencode.jsonc`:
+
+```jsonc
 {
-  "plugins": ["@op1/opencode-anthropic-auth"]
+  "plugins": ["@op1/opencode-anthropic-auth@0.0.0-beta-18743"]
 }
 ```
 
-> [!TIP]
-> It is STRONGLY advised that you pin the plugin to a version. This will keep you from getting automatic updates; however, this will protect you from nefarious updates.
->
-> This holds true for ANY OpenCode plugin. If you do not pin them, OpenCode will automatically update them on startup. It's a massive vulnerability waiting to happen.
-
-#### Example of pinned version
-
-```json
-{
-  "plugins": ["@op1/opencode-anthropic-auth@2.0.0-beta.1"]
-}
-```
-
-## Authentication
-
-The plugin adds one authentication option:
-
-- **Claude account** - OAuth flow via `claude.ai` for Pro, Max, Team, and Enterprise users. Availability and billing follow your organization's Anthropic plan and policies.
-
-OpenCode V2 already provides manual API-key entry and `ANTHROPIC_API_KEY`
-environment-variable authentication, so the plugin does not duplicate them.
-
-Start the browser OAuth flow with:
+Then start browser login:
 
 ```bash
 opencode2 auth login anthropic --method oauth
 ```
 
-## Configuration
+If OpenCode cached an older package, remove `~/.cache/opencode/packages/@op1` and restart it.
 
-The plugin supports the following environment variables:
+## Request changes
 
-| Variable                          | Description                                                                                                                                                                                 |
-|-----------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `ANTHROPIC_BASE_URL`              | Override the API endpoint URL (e.g. for proxying). Must be a valid HTTP(S) URL.                                                                                                             |
-| `OPENCODE_ANTHROPIC_OAUTH_CALLBACK_HOST` | Address for the local OAuth callback server to bind. Defaults to `127.0.0.1`; the browser redirect remains `http://localhost:53692/callback`. |
+For the plugin's OAuth connection, it:
 
-## How It Works
+- Adds the Anthropic OAuth authorization, beta, and Claude CLI headers.
+- Removes `x-api-key`.
+- Prepends this system block:
 
-For Claude account authentication, the plugin:
+```text
+You are a Claude agent, built on Anthropic's Claude Agent SDK.
+```
 
-1. Initiates a PKCE OAuth flow against Anthropic's authorization endpoint and listens for the browser redirect on `http://localhost:53692/callback`
-2. Exchanges the authorization code for access and refresh tokens
-3. Automatically refreshes expired tokens
-4. Injects the required OAuth headers and beta flags into API requests
-5. Sanitizes the system prompt for compatibility (see below)
-
-### System Prompt Sanitization
-
-The Anthropic API for Max subscriptions has specific requirements for the system prompt to identify as Claude Code. The plugin rewrites the system prompt on each request using an **anchor-based** approach that minimizes what gets changed:
-
-1. **Identity swap** — The OpenCode identity line is removed and replaced with the Claude Code identity.
-2. **Paragraph removal by anchor** — Any paragraph containing a known URL anchor (e.g. `github.com/anomalyco/opencode`, `opencode.ai/docs`) is removed entirely. This is resilient to upstream rewording — as long as the anchor URL appears somewhere in the paragraph, the removal works regardless of surrounding text changes.
-3. **Inline text replacements** — Short branded strings inside paragraphs we want to keep are replaced (e.g. "OpenCode" → "the assistant" in the professional objectivity section).
-
-Everything else in the system prompt is preserved: tone/style guidance, task management instructions, tool usage policy, environment info, skills, user/project instructions, and file paths containing "opencode". The sanitized system prompt is structured as three blocks in `system[]`: the billing header, the Claude Code identity line, and the remaining system content.
+The existing OpenCode prompt stays unchanged. The plugin does not rewrite messages, tools, URLs, request bodies, or responses.
 
 ## Development
 
-### Local Testing
-
-Use `bun run dev` to test plugin changes locally without publishing to npm:
-
 ```bash
-bun run dev
+bun install --frozen-lockfile
+bun test
+bun run types
+bun run lint
+bun run format:check
+bun run build
 ```
 
-This does three things:
-
-1. Builds the plugin
-2. Symlinks the build output into `.opencode/plugins/` so OpenCode loads it as a local plugin
-3. Starts `tsc --watch` for automatic rebuilds on source changes
-
-After starting the dev script, restart OpenCode in this project directory to pick up the local build. Any edits to `src/` will trigger a rebuild — restart OpenCode again to load the new version.
-
-Ctrl+C stops the watcher and cleans up the symlink. If the process was killed without cleanup (e.g. `kill -9`), you can manually remove the symlink:
-
-```bash
-bun run dev:clean
-```
-
-> [!NOTE]
-> If you have the npm version of this plugin in your global OpenCode config, both will load. The local version takes precedence for auth handling.
-
-### Publishing
-
-This project uses [changesets](https://github.com/changesets/changesets) for versioning and publishing. See the [changeset README](.changeset/README.md) for more details.
-
-```bash
-bun change          # create a changeset describing your changes
-```
-
-When changesets are merged to `main`, CI will automatically open a release PR. Merging that PR publishes to npm.
+For a local build, point `plugins` to the absolute `dist` directory and restart OpenCode.
 
 ## License
 
