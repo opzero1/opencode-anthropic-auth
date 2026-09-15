@@ -1,4 +1,4 @@
-import { Credential, Integration, Plugin } from '@opencode-ai/plugin/effect'
+import { Credential, Integration, Plugin } from '@opencode/plugin/effect'
 import { Effect } from 'effect'
 import { authorize, exchange, startCallbackServer } from './auth.ts'
 import {

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, mock, test } from 'bun:test'
-import type { Credential } from '@opencode-ai/plugin'
+import type { Credential } from '@opencode/plugin'
 import { Effect, type Scope } from 'effect'
 import { CLAUDE_CODE_IDENTITY } from '../constants.ts'
 import { AnthropicAuthPlugin } from '../index.ts'

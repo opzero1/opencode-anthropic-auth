@@ -7,16 +7,16 @@ Unofficial Anthropic subscription OAuth for OpenCode V2.
 
 ## Compatibility
 
-This release is pinned to one OpenCode V2 beta:
+This release targets OpenCode 2.0.3:
 
 | Component | Version |
 | --- | --- |
-| OpenCode V2 | `0.0.0-beta-18743` |
-| This plugin | `0.0.0-beta-18743` |
-| `@opencode-ai/plugin` | `0.0.0-beta-18743` |
+| OpenCode V2 | `2.0.3` |
+| This plugin | `2.0.3` |
+| `@opencode/plugin` | `2.0.3` |
 | Effect | `4.0.0-rc.112` |
 
-Do not update these independently. A new OpenCode beta needs a new tested plugin release.
+Run the development checks before updating the pinned OpenCode dependencies.
 
 ## Install
 
@@ -24,17 +24,11 @@ Pin the full plugin version in `opencode.jsonc`:
 
 ```jsonc
 {
-  "plugins": ["@op1/opencode-anthropic-auth@0.0.0-beta-18743"]
+  "plugins": ["@op1/opencode-anthropic-auth@2.0.3"]
 }
 ```
 
-Then start browser login:
-
-```bash
-opencode2 auth login anthropic --method oauth
-```
-
-If OpenCode cached an older package, remove `~/.cache/opencode/packages/@op1` and restart it.
+Restart OpenCode, run `/connect`, and select Anthropic's Claude account sign-in.
 
 ## Request changes
 
